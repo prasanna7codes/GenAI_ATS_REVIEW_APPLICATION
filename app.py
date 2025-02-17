@@ -40,72 +40,51 @@ def input_pdf_setup(uploaded_file):
 
 ## Streamlit App
 
-import streamlit as st
+st.set_page_config(page_title="ATS Resume EXpert")
+st.header("ATS Tracking System")
+input_text=st.text_area("Job Description: ",key="input")
+uploaded_file=st.file_uploader("Upload your resume(PDF)...",type=["pdf"])
 
-# Set Page Config
-st.set_page_config(page_title="ATS Resume Expert", layout="wide")
 
-# Sidebar
-st.sidebar.title("Navigation")
-st.sidebar.info("Use this app to analyze your resume against a job description.")
-
-# Main Header
-st.title("📄 ATS using GEMINI")
-
-# Input Fields
-st.markdown("### 📝 Job Description")
-input_text = st.text_area("Paste the job description here:", key="input")
-
-st.markdown("### 📂 Upload Your Resume")
-uploaded_file = st.file_uploader("Upload your resume (PDF only)", type=["pdf"])
-
-# Display PDF Upload Status
 if uploaded_file is not None:
-    st.success("✅ PDF Uploaded Successfully!")
+    st.write("PDF Uploaded Successfully")
 
-# Buttons for User Actions
-col1, col2 = st.columns(2)
-with col1:
-    submit1 = st.button("📊 Analyze Resume")
-with col2:
-    submit3 = st.button("🎯 Match Percentage")
 
-# Input Prompts
+submit1 = st.button("Tell Me About the Resume")
+
+#submit2 = st.button("How Can I Improvise my Skills")
+
+submit3 = st.button("Percentage match")
+
 input_prompt1 = """
-You are an experienced Technical Human Resource Manager. Your task is to review the provided resume against the job description. 
-Please provide a professional evaluation on whether the candidate's profile aligns with the role. 
-Highlight the strengths and weaknesses of the applicant in relation to the specified job requirements.
+ You are an experienced Technical Human Resource Manager,your task is to review the provided resume against the job description. 
+  Please share your professional evaluation on whether the candidate's profile aligns with the role. 
+ Highlight the strengths and weaknesses of the applicant in relation to the specified job requirements.
 """
 
 input_prompt3 = """
-You are a skilled ATS (Applicant Tracking System) scanner with deep expertise in data science and ATS functionality. 
-Your task is to evaluate the resume against the provided job description and calculate the percentage match. 
-The response should include:
-1️⃣ **Match Percentage**  
-2️⃣ **Keywords Missing**  
-3️⃣ **Final Thoughts**
+You are an skilled ATS (Applicant Tracking System) scanner with a deep understanding of data science and ATS functionality, 
+your task is to evaluate the resume against the provided job description. give me the percentage of match if the resume matches
+the job description. First the output should come as percentage and then keywords missing and last final thoughts.
 """
 
-# Resume Analysis
 if submit1:
     if uploaded_file is not None:
-        pdf_content = input_pdf_setup(uploaded_file)
-        response = get_gemini_response(input_prompt1, pdf_content, input_text)
-        st.subheader("📢 Resume Analysis")
+        pdf_content=input_pdf_setup(uploaded_file)
+        response=get_gemini_response(input_prompt1,pdf_content,input_text)
+        st.subheader("The Repsonse is")
         st.write(response)
     else:
-        st.warning("⚠️ Please upload your resume to proceed.")
+        st.write("Please uplaod the resume")
 
-# Percentage Match
 elif submit3:
     if uploaded_file is not None:
-        pdf_content = input_pdf_setup(uploaded_file)
-        response = get_gemini_response(input_prompt3, pdf_content, input_text)
-        st.subheader("🔍 Match Analysis")
+        pdf_content=input_pdf_setup(uploaded_file)
+        response=get_gemini_response(input_prompt3,pdf_content,input_text)
+        st.subheader("The Repsonse is")
         st.write(response)
     else:
-        st.warning("⚠️ Please upload your resume to proceed.")
-
+        st.write("Please uplaod the resume")
 
 
 
