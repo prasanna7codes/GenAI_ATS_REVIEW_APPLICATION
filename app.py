@@ -20,20 +20,33 @@ def get_gemini_response(input):
 # Function to extract text from PDF
 def input_pdf_text(uploaded_file):
     reader = pdf.PdfReader(uploaded_file)
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() or ""  # Handle None values safely
+    text = "".join(page.extract_text() or "" for page in reader.pages)  # Efficiently extract text
     return text.strip()
 
-# Streamlit App UI
-st.title("Smart ATS - Resume Analyzer")
-st.text("Improve Your Resume for ATS Systems")
+# ----------- Streamlit UI Setup -----------
 
-# User inputs
-jd = st.text_area("Paste the Job Description")
-uploaded_file = st.file_uploader("Upload Your Resume", type="pdf", help="Upload a PDF resume")
+# Sidebar for Branding & Instructions
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/8/80/Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg", use_column_width=True)
+st.sidebar.title("💼 Smart ATS - Resume Analyzer")
+st.sidebar.write("**How it Works?**")
+st.sidebar.info(
+    """
+    1️⃣ Paste the Job Description 📑  
+    2️⃣ Upload Your Resume (PDF) 📂  
+    3️⃣ Click 'Analyze' to get ATS insights ✅  
+    """
+)
 
-submit = st.button("Submit")
+# Main Page Header
+st.markdown("<h1 style='text-align: center;'>📑 Smart ATS - Resume Analyzer</h1>", unsafe_allow_html=True)
+st.write("---")
+
+# User Inputs
+jd = st.text_area("📝 Paste the Job Description Here:", height=150)
+uploaded_file = st.file_uploader("📂 Upload Your Resume (PDF)", type="pdf")
+
+# Submit Button
+submit = st.button("🚀 Analyze Resume")
 
 if submit:
     if uploaded_file is not None:
@@ -70,12 +83,12 @@ if submit:
                 response_json = json.loads(clean_json)  # Convert to dictionary
 
                 # Display JD Match Percentage
-                st.subheader("📊 ATS Analysis Results")
-                st.markdown(f"### 🎯 JD Match: **{response_json['JD Match']}**")
+                st.markdown("<h2 style='text-align: center;'>📊 ATS Analysis Results</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='text-align: center; color: green;'>🎯 JD Match: {response_json['JD Match']}</h3>", unsafe_allow_html=True)
 
                 # Display Missing Keywords
                 if response_json["MissingKeywords"]:
-                    st.warning("🚨 **Missing Keywords:** " + ", ".join(response_json["MissingKeywords"]))
+                    st.warning(f"🚨 **Missing Keywords:** {', '.join(response_json['MissingKeywords'])}")
                 else:
                     st.success("✅ No missing keywords! Your resume is well-optimized.")
 
