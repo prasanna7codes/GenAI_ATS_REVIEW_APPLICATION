@@ -1,96 +1,93 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-import base64
 import streamlit as st
-import os
-import io
-from PIL import Image 
-import pdf2image
 import google.generativeai as genai
+import os
+import PyPDF2 as pdf
+from dotenv import load_dotenv
+import json
 
+# Load environment variables
+load_dotenv()
+
+# Configure Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-def get_gemini_response(input,pdf_cotent,prompt):
-    model=genai.GenerativeModel('gemini-1.5-flash')
-    response=model.generate_content([input,pdf_content[0],prompt])
+# Function to get response from Gemini
+def get_gemini_response(input):
+    model = genai.GenerativeModel('gemini-pro')
+    response = model.generate_content(input)
     return response.text
 
-def input_pdf_setup(uploaded_file):
+# Function to extract text from PDF
+def input_pdf_text(uploaded_file):
+    reader = pdf.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() or ""  # Handle None values safely
+    return text.strip()
+
+# Streamlit App UI
+st.title("Smart ATS - Resume Analyzer")
+st.text("Improve Your Resume for ATS Systems")
+
+# User inputs
+jd = st.text_area("Paste the Job Description")
+uploaded_file = st.file_uploader("Upload Your Resume", type="pdf", help="Upload a PDF resume")
+
+submit = st.button("Submit")
+
+if submit:
     if uploaded_file is not None:
-        ## Convert the PDF to image
-        POPPLER_PATH="C:\Program Files (x86)\poppler\Library\bin"
-        images=pdf2image.convert_from_bytes(uploaded_file.read(), poppler_path=POPPLER_PATH)
+        # Extract text from uploaded PDF
+        text = input_pdf_text(uploaded_file)
 
-        first_page=images[0]
+        # Enforced JSON format in the prompt
+        formatted_prompt = f"""
+        You are an ATS (Applicant Tracking System) expert evaluating resumes.  
+        Analyze the resume against the job description and return only a **valid JSON response** in the following format:  
 
-        # Convert to bytes
-        img_byte_arr = io.BytesIO()
-        first_page.save(img_byte_arr, format='JPEG')
-        img_byte_arr = img_byte_arr.getvalue()
+        {{
+            "JD Match": "XX%",  
+            "MissingKeywords": ["Keyword1", "Keyword2"],  
+            "Profile Summary": "Summary here"  
+        }}
 
-        pdf_parts = [
-            {
-                "mime_type": "image/jpeg",
-                "data": base64.b64encode(img_byte_arr).decode()  # encode to base64
-            }
-        ]
-        return pdf_parts
+        ❗ **Do NOT include explanations, greetings, or extra text—return only JSON.** ❗
+
+        Resume: {text}  
+        Job Description: {jd}  
+        """
+
+        # Get response from Gemini
+        response_text = get_gemini_response(formatted_prompt)
+
+        try:
+            # Extract only JSON part from response
+            start = response_text.find("{")
+            end = response_text.rfind("}")
+
+            if start != -1 and end != -1:
+                clean_json = response_text[start:end+1]  # Extract JSON
+                response_json = json.loads(clean_json)  # Convert to dictionary
+
+                # Display JD Match Percentage
+                st.subheader("📊 ATS Analysis Results")
+                st.markdown(f"### 🎯 JD Match: **{response_json['JD Match']}**")
+
+                # Display Missing Keywords
+                if response_json["MissingKeywords"]:
+                    st.warning("🚨 **Missing Keywords:** " + ", ".join(response_json["MissingKeywords"]))
+                else:
+                    st.success("✅ No missing keywords! Your resume is well-optimized.")
+
+                # Display Profile Summary
+                st.subheader("📝 Profile Summary")
+                st.write(response_json["Profile Summary"])
+
+            else:
+                st.error("❌ The AI response does not contain valid JSON. Please try again.")
+
+        except json.JSONDecodeError:
+            st.error("❌ Error processing the ATS response. Please try again.")
+
     else:
-        raise FileNotFoundError("No file uploaded")
-
-## Streamlit App
-
-st.set_page_config(page_title="ATS Resume EXpert")
-st.header("ATS Tracking System")
-input_text=st.text_area("Job Description: ",key="input")
-uploaded_file=st.file_uploader("Upload your resume(PDF)...",type=["pdf"])
-
-
-if uploaded_file is not None:
-    st.write("PDF Uploaded Successfully")
-
-
-submit1 = st.button("Tell Me About the Resume")
-
-#submit2 = st.button("How Can I Improvise my Skills")
-
-submit3 = st.button("Percentage match")
-
-input_prompt1 = """
- You are an experienced Technical Human Resource Manager,your task is to review the provided resume against the job description. 
-  Please share your professional evaluation on whether the candidate's profile aligns with the role. 
- Highlight the strengths and weaknesses of the applicant in relation to the specified job requirements.
-"""
-
-input_prompt3 = """
-You are an skilled ATS (Applicant Tracking System) scanner with a deep understanding of data science and ATS functionality, 
-your task is to evaluate the resume against the provided job description. give me the percentage of match if the resume matches
-the job description. First the output should come as percentage and then keywords missing and last final thoughts.
-"""
-
-if submit1:
-    if uploaded_file is not None:
-        pdf_content=input_pdf_setup(uploaded_file)
-        response=get_gemini_response(input_prompt1,pdf_content,input_text)
-        st.subheader("The Repsonse is")
-        st.write(response)
-    else:
-        st.write("Please uplaod the resume")
-
-elif submit3:
-    if uploaded_file is not None:
-        pdf_content=input_pdf_setup(uploaded_file)
-        response=get_gemini_response(input_prompt3,pdf_content,input_text)
-        st.subheader("The Repsonse is")
-        st.write(response)
-    else:
-        st.write("Please uplaod the resume")
-
-
-
-   
-
-
-
-
+        st.warning("⚠️ Please upload a resume to proceed.")
