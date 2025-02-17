@@ -26,15 +26,14 @@ def input_pdf_text(uploaded_file):
 # ----------- Streamlit UI Setup -----------
 
 # Sidebar for Branding & Instructions
-image_url = "https://upload.wikimedia.org/wikipedia/commons/8/80/Artificial_Intelligence_%26_AI_%26_Machine_Learning_-_30212411048.jpg"
-st.sidebar.image(image_url, use_container_width=True)
+
 st.sidebar.title("💼 Smart ATS - Resume Analyzer")
 st.sidebar.write("**How it Works?**")
 st.sidebar.info(
     """
     1️⃣ Paste the Job Description 📑  
     2️⃣ Upload Your Resume (PDF) 📂  
-    3️⃣ Click 'Analyze' to get ATS insights ✅  
+    3️⃣ Click 'Analyze' to get ATS insights✅  
     """
 )
 
